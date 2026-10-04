@@ -3,10 +3,11 @@ from flask_cors import CORS
 
 from src.spam_classifier import predict_sms
 from src.feedback_manager import save_feedback
+from database.database import initialize_database
 
 app = Flask(__name__)
 CORS(app)
-
+initialize_database()
 
 @app.route("/", methods=["GET"])
 def home():

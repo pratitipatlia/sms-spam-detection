@@ -1,5 +1,17 @@
+
+data/feedback.csv
 venv/
+.venv/
 __pycache__/
 *.pyc
+
 database/feedback.db
 data/feedback.csv
+
+*.db
+*.sqlite
+*.sqlite3
+
+.env
+.env.*
+!.env.example
