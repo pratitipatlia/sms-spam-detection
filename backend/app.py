@@ -3,8 +3,9 @@ from flask_cors import CORS
 
 from src.spam_classifier import predict_sms
 from src.feedback_manager import save_feedback
-from database.database import initialize_database
-
+from database.database import initialize_database, get_retraining_candidates
+from src.model_training import retrain_model
+from src.spam_classifier import predict_sms, reload_model
 app = Flask(__name__)
 CORS(app)
 initialize_database()
@@ -45,6 +46,7 @@ def predict():
         }), 500
 
 
+
 @app.route("/feedback", methods=["POST"])
 def feedback():
     data = request.get_json()
@@ -73,14 +75,32 @@ def feedback():
             data["correct_label"]
         )
 
-        return jsonify({
-            "message": "Feedback recorded successfully"
-        })
-
     except Exception as e:
         return jsonify({
             "error": str(e)
         }), 500
+
+    # Feedback has been saved. Check for consensus.
+    try:
+        candidates = get_retraining_candidates(min_reports=5)
+
+        if candidates:
+            print("Eligible feedback found. Starting automatic retraining...")
+
+            retrain_model()
+
+            print("Automatic retraining finished.")
+            reload_model()
+
+    except Exception as e:
+        # Feedback is already saved, so do not report the submission
+        # as failed just because retraining encountered an error.
+        app.logger.exception("Automatic retraining failed: %s", e)
+
+    return jsonify({
+        "message": "Feedback recorded successfully"
+    }), 200
+
 
 
 if __name__ == "__main__":
